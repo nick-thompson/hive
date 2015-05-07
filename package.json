@@ -1,0 +1,30 @@
+{
+  "name": "jetpack",
+  "version": "0.1.0",
+  "description": "A minimal, smart, and fast JavaScript packaging tool.",
+  "main": "index.js",
+  "dependencies": {
+    "bindings": "~1.2.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nick-thompson/jetpack"
+  },
+  "keywords": [
+    "javascript",
+    "package",
+    "bundle",
+    "browserify",
+    "webpack"
+  ],
+  "author": "Nick Thompson",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nick-thompson/jetpack/issues"
+  },
+  "homepage": "https://github.com/nick-thompson/jetpack",
+  "gypfile": true
+}
