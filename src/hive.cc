@@ -3,6 +3,13 @@
 
 using namespace v8;
 
+static uv_key_t isolate_cache_key;
+static uv_once_t key_guard;
+
+static void create_key() {
+  (void) uv_key_create(&isolate_cache_key);
+}
+
 class HiveWorker : public NanAsyncWorker {
  public:
   HiveWorker(NanCallback* callback, std::string path, char* buf, size_t len)
@@ -11,7 +18,14 @@ class HiveWorker : public NanAsyncWorker {
 
   // Executed inside the worker-thread.
   void Execute () {
-    Isolate* isolate = Isolate::New();
+    (void) uv_once(&key_guard, create_key);
+
+    Isolate* isolate = (Isolate *)uv_key_get(&isolate_cache_key);
+    if (isolate == NULL) {
+      isolate = Isolate::New();
+      uv_key_set(&isolate_cache_key, isolate);
+    }
+
     Locker locker(isolate);
     Isolate::Scope isolate_scope(isolate);
     HandleScope handle_scope(isolate);
