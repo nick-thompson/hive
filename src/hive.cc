@@ -11,7 +11,22 @@ class HiveWorker : public NanAsyncWorker {
 
   // Executed inside the worker-thread.
   void Execute () {
-    res = buf;
+    Isolate* isolate = Isolate::New();
+    Locker locker(isolate);
+    Isolate::Scope isolate_scope(isolate);
+    HandleScope handle_scope(isolate);
+
+    Local<Context> context = Context::New(isolate);
+    Context::Scope context_scope(context);
+
+    Local<String> source = String::NewFromUtf8(
+        isolate, buf, String::kNormalString, len);
+
+    Local<Script> script = Script::Compile(source);
+    Local<Value> result = script->Run();
+
+    res = result->IntegerValue();
+    v8::Unlocker unlocker(isolate);
   }
 
   // Executed when the async work is complete, inside the main thread.
@@ -19,8 +34,8 @@ class HiveWorker : public NanAsyncWorker {
     NanScope();
 
     Local<Value> argv[] = {
-        NanNull()
-      , NanBufferUse(res, len)
+        NanNull(),
+        NanNew<Number>(res)
     };
 
     callback->Call(2, argv);
@@ -30,7 +45,7 @@ class HiveWorker : public NanAsyncWorker {
   std::string path;
   char* buf;
   size_t len;
-  char* res;
+  int64_t res;
 };
 
 NAN_METHOD(Take) {
