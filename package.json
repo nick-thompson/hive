@@ -4,6 +4,7 @@
   "description": "A minimal, smart, and fast JavaScript packaging tool.",
   "main": "index.js",
   "dependencies": {
+    "babel-core": "^5.2.17",
     "bindings": "~1.2.1",
     "nan": "^1.8.4"
   },

@@ -1,13 +1,20 @@
 #include <nan.h>
+#include <fstream>
 #include "hive.h"
 
 using namespace v8;
 
 static uv_key_t isolate_cache_key;
+static uv_key_t context_cache_key;
 static uv_once_t key_guard;
 
-static void create_key() {
+static std::ifstream f("node_modules/babel-core/browser.js");
+static std::string babel(
+    (std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+
+static void create_keys() {
   (void) uv_key_create(&isolate_cache_key);
+  (void) uv_key_create(&context_cache_key);
 }
 
 class HiveWorker : public NanAsyncWorker {
@@ -18,7 +25,7 @@ class HiveWorker : public NanAsyncWorker {
 
   // Executed inside the worker-thread.
   void Execute () {
-    (void) uv_once(&key_guard, create_key);
+    (void) uv_once(&key_guard, create_keys);
 
     Isolate* isolate = (Isolate *)uv_key_get(&isolate_cache_key);
     if (isolate == NULL) {
@@ -30,8 +37,20 @@ class HiveWorker : public NanAsyncWorker {
     Isolate::Scope isolate_scope(isolate);
     HandleScope handle_scope(isolate);
 
-    Local<Context> context = Context::New(isolate);
-    Context::Scope context_scope(context);
+    Persistent<Context>* context = (Persistent<Context> *)uv_key_get(&context_cache_key);
+    if (context == NULL) {
+      Local<Context> ctx = Context::New(isolate);
+      context = new Persistent<Context>(isolate, ctx);
+
+      Context::Scope context_scope(ctx);
+      Local<String> babel_source = String::NewFromUtf8(isolate, babel.c_str());
+      Local<Script> babel_script = Script::Compile(babel_source);
+      (void) babel_script->Run();
+
+      uv_key_set(&context_cache_key, context);
+    }
+
+    Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
     Local<String> source = String::NewFromUtf8(
         isolate, buf, String::kNormalString, len);
