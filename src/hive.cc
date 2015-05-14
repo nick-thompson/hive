@@ -74,9 +74,11 @@ class HiveWorker : public NanAsyncWorker {
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
     Local<Script> s = Script::Compile(NanNew<String>(script.c_str()));
-    Local<Value> result = s->Run();
+    Local<String> result = s->Run()->ToString();
 
-    res = result->IntegerValue();
+    String::Utf8Value r(result);
+
+    res = std::string(*r);
     NanUnlocker();
   }
 
@@ -86,7 +88,7 @@ class HiveWorker : public NanAsyncWorker {
 
     Local<Value> argv[] = {
         NanNull(),
-        NanNew<Number>(res)
+        NanNew<String>(res.c_str())
     };
 
     callback->Call(2, argv);
@@ -95,7 +97,7 @@ class HiveWorker : public NanAsyncWorker {
  private:
   std::string path;
   std::string script;
-  int64_t res;
+  std::string res;
 };
 
 NAN_METHOD(Take) {
