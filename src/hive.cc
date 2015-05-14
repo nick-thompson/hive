@@ -12,11 +12,27 @@ static std::ifstream f("node_modules/babel-core/browser.js");
 static std::string babel(
     (std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 
+// Initialize libuv thread-local cache keys.
 static void create_keys() {
   (void) uv_key_create(&isolate_cache_key);
   (void) uv_key_create(&context_cache_key);
 }
 
+// Returns an Isolate* from the thread-local cache, if it exists.
+// Otherwise, creates and caches a new Isolate* before returning.
+static Isolate* get_isolate() {
+  Isolate* isolate = (Isolate *) uv_key_get(&isolate_cache_key);
+  if (isolate == NULL) {
+    isolate = Isolate::New();
+    uv_key_set(&isolate_cache_key, isolate);
+  }
+  return isolate;
+}
+
+// Returns a Persistent<Context>* from the thread-local cache, if it exists.
+// Otherwise, creates a new Persistent<Context>* in the given isolate, and
+// evaluates the Babel bootstrap script to prepare the context for file
+// transformation.
 static Persistent<Context>* get_context(Isolate* isolate) {
   Persistent<Context>* context =
     (Persistent<Context> *) uv_key_get(&context_cache_key);
@@ -36,6 +52,9 @@ static Persistent<Context>* get_context(Isolate* isolate) {
   return context;
 }
 
+// Transforms the given file contents in a new v8 isolate on Node's default
+// libuv thread pool, returning the result of the transformation on the main
+// event loop.
 class HiveWorker : public NanAsyncWorker {
  public:
   HiveWorker(NanCallback* callback, std::string path, char* buf, size_t len)
@@ -45,16 +64,11 @@ class HiveWorker : public NanAsyncWorker {
   // Executed inside the worker-thread.
   void Execute () {
     (void) uv_once(&key_guard, create_keys);
-
-    Isolate* isolate = (Isolate *)uv_key_get(&isolate_cache_key);
-    if (isolate == NULL) {
-      isolate = Isolate::New();
-      uv_key_set(&isolate_cache_key, isolate);
-    }
-
-    Locker locker(isolate);
+    Isolate* isolate = get_isolate();
     Isolate::Scope isolate_scope(isolate);
-    HandleScope handle_scope(isolate);
+
+    NanLocker();
+    NanScope();
 
     Persistent<Context>* context = get_context(isolate);
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
@@ -66,7 +80,7 @@ class HiveWorker : public NanAsyncWorker {
     Local<Value> result = script->Run();
 
     res = result->IntegerValue();
-    v8::Unlocker unlocker(isolate);
+    NanUnlocker();
   }
 
   // Executed when the async work is complete, inside the main thread.
