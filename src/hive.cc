@@ -57,8 +57,8 @@ static Persistent<Context>* get_context(Isolate* isolate) {
 // event loop.
 class HiveWorker : public NanAsyncWorker {
  public:
-  HiveWorker(NanCallback* callback, std::string path, char* buf, size_t len)
-    : NanAsyncWorker(callback), path(path), buf(buf), len(len) {}
+  HiveWorker(NanCallback* callback, std::string path, std::string script)
+    : NanAsyncWorker(callback), path(path), script(script) {}
   ~HiveWorker() {}
 
   // Executed inside the worker-thread.
@@ -73,11 +73,8 @@ class HiveWorker : public NanAsyncWorker {
     Persistent<Context>* context = get_context(isolate);
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
-    Local<String> source = String::NewFromUtf8(
-        isolate, buf, String::kNormalString, len);
-
-    Local<Script> script = Script::Compile(source);
-    Local<Value> result = script->Run();
+    Local<Script> s = Script::Compile(NanNew<String>(script.c_str()));
+    Local<Value> result = s->Run();
 
     res = result->IntegerValue();
     NanUnlocker();
@@ -97,31 +94,20 @@ class HiveWorker : public NanAsyncWorker {
 
  private:
   std::string path;
-  char* buf;
-  size_t len;
+  std::string script;
   int64_t res;
 };
 
 NAN_METHOD(Take) {
   NanScope();
 
-  if (args.Length() != 3) {
-    NanThrowTypeError("Expected three arguments.");
-    NanReturnUndefined();
-  }
-
-  if (!args[0]->IsString() || !args[2]->IsFunction()) {
-    NanThrowTypeError("Received arguments of the wrong type.");
-    NanReturnUndefined();
-  }
-
   String::Utf8Value p(args[0]->ToString());
   std::string path(*p);
 
-  char* buf = node::Buffer::Data(args[1]);
-  size_t len = node::Buffer::Length(args[1]);
-  NanCallback *callback = new NanCallback(args[2].As<Function>());
+  String::Utf8Value s(args[1]->ToString());
+  std::string script(*s);
 
-  NanAsyncQueueWorker(new HiveWorker(callback, path, buf, len));
+  NanCallback *callback = new NanCallback(args[2].As<Function>());
+  NanAsyncQueueWorker(new HiveWorker(callback, path, script));
   NanReturnUndefined();
 }
