@@ -17,6 +17,25 @@ static void create_keys() {
   (void) uv_key_create(&context_cache_key);
 }
 
+static Persistent<Context>* get_context(Isolate* isolate) {
+  Persistent<Context>* context =
+    (Persistent<Context> *) uv_key_get(&context_cache_key);
+
+  if (context == NULL) {
+    Local<Context> ctx = Context::New(isolate);
+    context = new Persistent<Context>(isolate, ctx);
+
+    Context::Scope context_scope(ctx);
+    Local<Script> script = Script::Compile(
+        String::NewFromUtf8(isolate, babel.c_str()));
+
+    (void) script->Run();
+    uv_key_set(&context_cache_key, context);
+  }
+
+  return context;
+}
+
 class HiveWorker : public NanAsyncWorker {
  public:
   HiveWorker(NanCallback* callback, std::string path, char* buf, size_t len)
@@ -37,19 +56,7 @@ class HiveWorker : public NanAsyncWorker {
     Isolate::Scope isolate_scope(isolate);
     HandleScope handle_scope(isolate);
 
-    Persistent<Context>* context = (Persistent<Context> *)uv_key_get(&context_cache_key);
-    if (context == NULL) {
-      Local<Context> ctx = Context::New(isolate);
-      context = new Persistent<Context>(isolate, ctx);
-
-      Context::Scope context_scope(ctx);
-      Local<String> babel_source = String::NewFromUtf8(isolate, babel.c_str());
-      Local<Script> babel_script = Script::Compile(babel_source);
-      (void) babel_script->Run();
-
-      uv_key_set(&context_cache_key, context);
-    }
-
+    Persistent<Context>* context = get_context(isolate);
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
     Local<String> source = String::NewFromUtf8(
