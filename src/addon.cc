@@ -4,8 +4,8 @@
 using namespace v8;
 
 void Init(Handle<Object> exports) {
-  exports->Set(NanNew<String>("take"),
-    NanNew<FunctionTemplate>(Take)->GetFunction());
+  exports->Set(NanNew<String>("eval"),
+    NanNew<FunctionTemplate>(Eval)->GetFunction());
 }
 
 NODE_MODULE(addon, Init)

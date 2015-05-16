@@ -57,8 +57,8 @@ static Persistent<Context>* get_context(Isolate* isolate) {
 // event loop.
 class HiveWorker : public NanAsyncWorker {
  public:
-  HiveWorker(NanCallback* callback, std::string path, std::string script)
-    : NanAsyncWorker(callback), path(path), script(script) {}
+  HiveWorker(NanCallback* callback, std::string script)
+    : NanAsyncWorker(callback), script(script) {}
   ~HiveWorker() {}
 
   // Executed inside the worker-thread.
@@ -95,21 +95,17 @@ class HiveWorker : public NanAsyncWorker {
   }
 
  private:
-  std::string path;
   std::string script;
   std::string res;
 };
 
-NAN_METHOD(Take) {
+NAN_METHOD(Eval) {
   NanScope();
 
-  String::Utf8Value p(args[0]->ToString());
-  std::string path(*p);
-
-  String::Utf8Value s(args[1]->ToString());
+  String::Utf8Value s(args[0]->ToString());
   std::string script(*s);
 
-  NanCallback *callback = new NanCallback(args[2].As<Function>());
-  NanAsyncQueueWorker(new HiveWorker(callback, path, script));
+  NanCallback *callback = new NanCallback(args[1].As<Function>());
+  NanAsyncQueueWorker(new HiveWorker(callback, script));
   NanReturnUndefined();
 }

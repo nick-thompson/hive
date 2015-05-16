@@ -3,6 +3,6 @@
 
 #include <nan.h>
 
-NAN_METHOD(Take);
+NAN_METHOD(Eval);
 
 #endif  // HIVE_H_
