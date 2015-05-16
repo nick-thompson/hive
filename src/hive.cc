@@ -8,10 +8,6 @@ static uv_key_t isolate_cache_key;
 static uv_key_t context_cache_key;
 static uv_once_t key_guard;
 
-static std::ifstream f("node_modules/babel-core/browser.js");
-static std::string babel(
-    (std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-
 // Initialize libuv thread-local cache keys.
 static void create_keys() {
   (void) uv_key_create(&isolate_cache_key);
@@ -40,12 +36,6 @@ static Persistent<Context>* get_context(Isolate* isolate) {
   if (context == NULL) {
     Local<Context> ctx = Context::New(isolate);
     context = new Persistent<Context>(isolate, ctx);
-
-    Context::Scope context_scope(ctx);
-    Local<Script> script = Script::Compile(
-        String::NewFromUtf8(isolate, babel.c_str()));
-
-    (void) script->Run();
     uv_key_set(&context_cache_key, context);
   }
 
