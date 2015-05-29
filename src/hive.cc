@@ -1,5 +1,4 @@
 #include <nan.h>
-#include <fstream>
 #include "hive.h"
 
 using namespace v8;
@@ -26,9 +25,7 @@ static Isolate* get_isolate() {
 }
 
 // Returns a Persistent<Context>* from the thread-local cache, if it exists.
-// Otherwise, creates a new Persistent<Context>* in the given isolate, and
-// evaluates the Babel bootstrap script to prepare the context for file
-// transformation.
+// Otherwise, creates a new cached Persistent<Context>* in the given isolate.
 static Persistent<Context>* get_context(Isolate* isolate) {
   Persistent<Context>* context =
     (Persistent<Context> *) uv_key_get(&context_cache_key);
@@ -64,6 +61,7 @@ class HiveWorker : public NanAsyncWorker {
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
     Local<Script> s = Script::Compile(NanNew<String>(script.c_str()));
+    // TODO: Should be a Local<Value> represented as a string via JSON stringify
     Local<String> result = s->Run()->ToString();
 
     String::Utf8Value r(result);
