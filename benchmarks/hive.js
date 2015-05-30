@@ -1,4 +1,4 @@
-var Hive = require('../lib/Hive');
+var Hive = require('..');
 
 var assert = require('assert');
 
