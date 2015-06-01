@@ -15,7 +15,7 @@ function runCluster(callback) {
     );
 
     setTimeout(function() {
-      async.times(runs, function(n, next) {
+      async.timesSeries(runs, function(n, next) {
         exec(
           'node benchmarks/cluster.js ' + samples,
           function(err, stdout, stderr) {
@@ -32,7 +32,7 @@ function runCluster(callback) {
 }
 
 function runHive(callback) {
-  async.times(runs, function(n, next) {
+  async.timesSeries(runs, function(n, next) {
     exec(
       'node benchmarks/hive.js ' + samples,
       function(err, stdout, stderr) {
