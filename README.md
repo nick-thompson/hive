@@ -1,6 +1,6 @@
-# jetpack
+# hive
 
-> A minimal, smart, and fast JavaScript packaging tool.
+> Threaded script evaluation in Node.js.
 
 ## Getting Started
 

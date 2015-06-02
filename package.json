@@ -1,7 +1,7 @@
 {
-  "name": "jetpack",
+  "name": "hive",
   "version": "0.1.0",
-  "description": "A minimal, smart, and fast JavaScript packaging tool.",
+  "description": "Threaded script evaluation in Node.js.",
   "main": "index.js",
   "dependencies": {
     "async": "^1.0.0",
@@ -14,20 +14,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nick-thompson/jetpack"
+    "url": "https://github.com/nick-thompson/hive"
   },
   "keywords": [
     "javascript",
-    "package",
-    "bundle",
-    "browserify",
-    "webpack"
+    "threads",
+    "eval"
   ],
   "author": "Nick Thompson",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nick-thompson/jetpack/issues"
+    "url": "https://github.com/nick-thompson/hive/issues"
   },
-  "homepage": "https://github.com/nick-thompson/jetpack",
+  "homepage": "https://github.com/nick-thompson/hive",
   "gypfile": true
 }
