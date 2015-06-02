@@ -70,8 +70,12 @@ class HiveWorker : public NanAsyncWorker {
       return;
     }
 
-    // TODO: Should be a Local<Value> represented as a string via JSON stringify
-    Local<String> result = v->ToString();
+    Local<Object> global = NanGetCurrentContext()->Global();
+    Local<Object> JSON = global->Get(NanNew<String>("JSON"))->ToObject();
+    Local<Value> stringify_ = JSON->Get(NanNew<String>("stringify"));
+    Local<Function> stringify = Local<Function>::Cast(stringify_);
+    Local<Value> args[] = { v };
+    Local<Value> result = stringify->Call(JSON, 1, args);
 
     String::Utf8Value r(result);
 

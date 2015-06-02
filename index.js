@@ -1,17 +1,12 @@
 var addon = require('bindings')('addon.node');
-var fs = require('fs');
 
-function eval(script, callback) {
-  return addon.eval(script, callback);
-}
-
-function evalFile(path, callback) {
-  fs.readFile(path, {encoding: 'utf-8'}, function(err, body) {
-    return eval(body, callback);
+function eval(expr, callback) {
+  return addon.eval(expr, function(err, res) {
+    if (err) return callback(err);
+    return callback(err, JSON.parse(res));
   });
 }
 
 module.exports = {
-  eval: eval,
-  evalFile: evalFile
+  eval: eval
 };
