@@ -60,9 +60,18 @@ class HiveWorker : public NanAsyncWorker {
     Persistent<Context>* context = get_context(isolate);
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
+    TryCatch tc;
     Local<Script> s = Script::Compile(NanNew<String>(script.c_str()));
+    Local<Value> v = s->Run();
+    if (v.IsEmpty()) {
+      Local<Value> ex = tc.Exception();
+      String::Utf8Value ex_str(ex);
+      SetErrorMessage(*ex_str);
+      return;
+    }
+
     // TODO: Should be a Local<Value> represented as a string via JSON stringify
-    Local<String> result = s->Run()->ToString();
+    Local<String> result = v->ToString();
 
     String::Utf8Value r(result);
 
