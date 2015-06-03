@@ -39,8 +39,8 @@ static Persistent<Context>* get_context(Isolate* isolate) {
   return context;
 }
 
-// Transforms the given file contents in a new v8 isolate on Node's default
-// libuv thread pool, returning the result of the transformation on the main
+// Executes the given script or expression in a new v8 isolate on Node's default
+// libuv thread pool, returning the result of the evaluation on the main
 // event loop.
 class HiveWorker : public NanAsyncWorker {
  public:
