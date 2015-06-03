@@ -2,7 +2,30 @@
 
 > Threaded script evaluation in Node.js.
 
+Hive is largely an experiment in leveraging Node.js' default thread pool for improving the performance
+of CPU-bound computations. Hive's main feature is an asynchronous variant of the builtin `eval` function, where
+the expression passed will be executed in a separate context on one of the worker threads behind Node.js' event loop.
+
+See the accompanying blog post [here]() for a more detailed introduction.
+
+## Installation
+```bash
+$ npm install nick-thompson/hive
+```
+
 ## Getting Started
+Using Hive couldn't be easier. This module exports one function, `eval`, which takes
+
+```js
+Hive.eval('1 + 1;', function(err, res) {
+  console.log(typeof res); // "number"
+  console.log(res); // 2
+});
+```
+
+## Caveats
+
+## Motivation
 
 ## License
 
