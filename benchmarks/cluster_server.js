@@ -10,7 +10,7 @@ if (cluster.isMaster) {
 } else {
   net.createServer(function(conn) {
     conn.on('data', function(data) {
-      conn.end('' + eval(data.toString()));
+      conn.end(JSON.stringify(eval(data.toString())));
     });
   }).listen('/tmp/hive.sock');
 }
