@@ -5,13 +5,6 @@ using namespace v8;
 
 static uv_key_t isolate_cache_key;
 static uv_key_t context_cache_key;
-static uv_once_t key_guard;
-
-// Initialize libuv thread-local cache keys.
-static void create_keys() {
-  (void) uv_key_create(&isolate_cache_key);
-  (void) uv_key_create(&context_cache_key);
-}
 
 // Returns an Isolate* from the thread-local cache, if it exists.
 // Otherwise, creates and caches a new Isolate* before returning.
@@ -50,7 +43,6 @@ class HiveWorker : public NanAsyncWorker {
 
   // Executed inside the worker-thread.
   void Execute () {
-    (void) uv_once(&key_guard, create_keys);
     Isolate* isolate = get_isolate();
     Isolate::Scope isolate_scope(isolate);
 
@@ -99,6 +91,12 @@ class HiveWorker : public NanAsyncWorker {
   std::string script;
   std::string res;
 };
+
+NAN_METHOD(Initialize) {
+  (void) uv_key_create(&isolate_cache_key);
+  (void) uv_key_create(&context_cache_key);
+  NanReturnUndefined();
+}
 
 NAN_METHOD(Eval) {
   NanScope();
