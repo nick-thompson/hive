@@ -1,10 +1,32 @@
 #include <nan.h>
+#include <vector>
 #include "hive.h"
 
 using namespace v8;
 
 static uv_key_t isolate_cache_key;
 static uv_key_t context_cache_key;
+
+static std::vector<Isolate*> isolates(4);
+static std::vector<Persistent<Context>*> contexts(4);
+
+static int idx = 0;
+
+// Estimates the size of the default libuv thread pool, based on
+// the UV_THREADPOOL_SIZE environment variable.
+static int get_threadpool_size() {
+  int n = 4;
+  const char* env = getenv("UV_THREADPOOL_SIZE");
+
+  if (env != NULL)
+    n = atoi(env);
+  if (n == 0)
+    n = 1;
+  if (n > 128)
+    n = 128;
+
+  return n;
+}
 
 // Returns an Isolate* from the thread-local cache, if it exists.
 // Otherwise, creates and caches a new Isolate* before returning.
@@ -93,6 +115,24 @@ class HiveWorker : public NanAsyncWorker {
 };
 
 NAN_METHOD(Initialize) {
+  int size = get_threadpool_size();
+  isolates.resize(size);
+  contexts.resize(size);
+
+  for (int i = 0; i < size; i++) {
+    Isolate* isolate = Isolate::New();
+    Isolate::Scope isolate_scope(isolate);
+    NanLocker();
+    NanScope();
+
+    Local<Context> ctx = Context::New(isolate);
+    Persistent<Context>* context = new Persistent<Context>(isolate, ctx);
+    isolates[i] = isolate;
+    contexts[i] = context;
+
+    NanUnlocker();
+  }
+
   (void) uv_key_create(&isolate_cache_key);
   (void) uv_key_create(&context_cache_key);
   NanReturnUndefined();
