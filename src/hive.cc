@@ -6,6 +6,7 @@ using namespace v8;
 
 static uv_key_t isolate_cache_key;
 static uv_key_t context_cache_key;
+static uv_mutex_t mutex;
 
 static std::vector<Isolate*> isolates(4);
 static std::vector<Persistent<Context>*> contexts(4);
@@ -28,32 +29,6 @@ static int get_threadpool_size() {
   return n;
 }
 
-// Returns an Isolate* from the thread-local cache, if it exists.
-// Otherwise, creates and caches a new Isolate* before returning.
-static Isolate* get_isolate() {
-  Isolate* isolate = (Isolate *) uv_key_get(&isolate_cache_key);
-  if (isolate == NULL) {
-    isolate = Isolate::New();
-    uv_key_set(&isolate_cache_key, isolate);
-  }
-  return isolate;
-}
-
-// Returns a Persistent<Context>* from the thread-local cache, if it exists.
-// Otherwise, creates a new cached Persistent<Context>* in the given isolate.
-static Persistent<Context>* get_context(Isolate* isolate) {
-  Persistent<Context>* context =
-    (Persistent<Context> *) uv_key_get(&context_cache_key);
-
-  if (context == NULL) {
-    Local<Context> ctx = Context::New(isolate);
-    context = new Persistent<Context>(isolate, ctx);
-    uv_key_set(&context_cache_key, context);
-  }
-
-  return context;
-}
-
 // Executes the given script or expression in a new v8 isolate on Node's default
 // libuv thread pool, returning the result of the evaluation on the main
 // event loop.
@@ -65,13 +40,26 @@ class HiveWorker : public NanAsyncWorker {
 
   // Executed inside the worker-thread.
   void Execute () {
-    Isolate* isolate = get_isolate();
+    Isolate* isolate = (Isolate *) uv_key_get(&isolate_cache_key);
+    Persistent<Context>* context =
+      (Persistent<Context> *) uv_key_get(&context_cache_key);
+
+    // If thread local instances of the isolate and context are unavailable,
+    // allocate a pair from the pool.
+    if (isolate == NULL && context == NULL) {
+      uv_mutex_lock(&mutex);
+      isolate = isolates[idx];
+      context = contexts[idx++];
+      uv_key_set(&isolate_cache_key, isolate);
+      uv_key_set(&context_cache_key, context);
+      uv_mutex_unlock(&mutex);
+    }
+
     Isolate::Scope isolate_scope(isolate);
 
     NanLocker();
     NanScope();
 
-    Persistent<Context>* context = get_context(isolate);
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
     TryCatch tc;
@@ -84,6 +72,7 @@ class HiveWorker : public NanAsyncWorker {
       return;
     }
 
+    // Marshal the result of the script evaluation using JSON.stringify.
     Local<Object> global = NanGetCurrentContext()->Global();
     Local<Object> JSON = global->Get(NanNew<String>("JSON"))->ToObject();
     Local<Value> stringify_ = JSON->Get(NanNew<String>("stringify"));
@@ -133,6 +122,7 @@ NAN_METHOD(Initialize) {
     NanUnlocker();
   }
 
+  (void) uv_mutex_init(&mutex);
   (void) uv_key_create(&isolate_cache_key);
   (void) uv_key_create(&context_cache_key);
   NanReturnUndefined();
