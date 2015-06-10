@@ -35,7 +35,7 @@ static int get_threadpool_size() {
 class HiveWorker : public NanAsyncWorker {
  public:
   HiveWorker(NanCallback* callback, std::string script)
-    : NanAsyncWorker(callback), script(script) {}
+    : NanAsyncWorker(callback), script(script), undef(false) {}
   ~HiveWorker() {}
 
   // Executed inside the worker-thread.
@@ -65,6 +65,7 @@ class HiveWorker : public NanAsyncWorker {
     TryCatch tc;
     Local<Script> s = Script::Compile(NanNew<String>(script.c_str()));
     Local<Value> v = s->Run();
+
     if (v.IsEmpty()) {
       Local<Value> ex = tc.Exception();
       String::Utf8Value ex_str(ex);
@@ -80,6 +81,16 @@ class HiveWorker : public NanAsyncWorker {
     Local<Value> args[] = { v };
     Local<Value> result = stringify->Call(JSON, 1, args);
 
+    if (result->IsUndefined()) {
+      // Per ECMAScript 5, JSON.stringify will return `undefined` given an
+      // argument of type other than String, Boolean, Number, Object, or null,
+      // or when given an argument of type Object which is callable
+      // (a function).
+      undef = true;
+      NanUnlocker();
+      return;
+    }
+
     String::Utf8Value r(result);
 
     res = std::string(*r);
@@ -90,9 +101,15 @@ class HiveWorker : public NanAsyncWorker {
   void HandleOKCallback () {
     NanScope();
 
+    if (undef) {
+      Local<Value> argv[] = { NanNull(), NanUndefined() };
+      callback->Call(2, argv);
+      return;
+    }
+
     Local<Value> argv[] = {
-        NanNull(),
-        NanNew<String>(res.c_str())
+      NanNull(),
+      NanNew<String>(res.c_str())
     };
 
     callback->Call(2, argv);
@@ -101,6 +118,7 @@ class HiveWorker : public NanAsyncWorker {
  private:
   std::string script;
   std::string res;
+  bool undef;
 };
 
 NAN_METHOD(Initialize) {

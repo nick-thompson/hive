@@ -35,7 +35,8 @@ describe('Hive', function() {
     });
 
     it('should marshal undefined correctly', function(done) {
-      Hive.eval('ref;', function(err, res) {
+      Hive.eval('', function(err, res) {
+        assert.equal(null, err);
         assert.equal(typeof res, 'undefined');
         done();
       });
