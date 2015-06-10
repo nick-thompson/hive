@@ -27,5 +27,8 @@
     "url": "https://github.com/nick-thompson/hive/issues"
   },
   "homepage": "https://github.com/nick-thompson/hive",
-  "gypfile": true
+  "gypfile": true,
+  "devDependencies": {
+    "babel-core": "^5.5.5"
+  }
 }

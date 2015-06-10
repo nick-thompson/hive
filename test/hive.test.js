@@ -4,7 +4,7 @@ var Hive = require('..');
 
 describe('Hive', function() {
 
-  describe('arbitrary evaluations execute as expected', function() {
+  describe('evaluates arbitrary expressions as expected', function() {
 
     it('should be 2', function(done) {
       Hive.eval('1 + 1;', function(err, res) {
@@ -44,7 +44,7 @@ describe('Hive', function() {
 
   });
 
-  describe('v8 Exceptions propagate as JS errors.', function() {
+  describe('has v8 Exceptions propagate as JS errors.', function() {
 
     it('should throw a reference error', function(done) {
       Hive.eval('x', function(err, res) {
@@ -58,6 +58,28 @@ describe('Hive', function() {
       Hive.eval('var x = 1; x();', function(err, res) {
         assert(err instanceof Error);
         assert(/TypeError/.test(err.message));
+        done();
+      });
+    });
+
+  });
+
+  describe('prepares each context with the Hivefile', function() {
+
+    it('should have a global `babel` reference', function(done) {
+      Hive.eval('typeof babel.transform', function(err, res) {
+        assert.equal(null, err);
+        assert.equal(typeof res, 'string');
+        assert.equal(res, 'function');
+        done();
+      });
+    });
+
+    it('should transform valid JavaScript strings', function(done) {
+      Hive.eval('babel.transform("function x() {}").code', function(err, res) {
+        assert.equal(null, err);
+        assert.equal(typeof res, 'string');
+        assert.equal(res, '"use strict";\n\nfunction x() {}');
         done();
       });
     });
