@@ -94,6 +94,15 @@ describe('Hive', function() {
       });
     });
 
+    it('should fail marshalling the result of babel.transform', function(done) {
+      Hive.eval('babel.transform("function x() {}")', function(err, res) {
+        assert(err instanceof Error);
+        assert(/TypeError/.test(err.message));
+        assert(/circular/.test(err.message));
+        done();
+      });
+    });
+
   });
 
 });
