@@ -62,6 +62,16 @@ describe('Hive', function() {
       });
     });
 
+    it('should throw trying to marshal a circular structure', function(done) {
+      var script = 'var x = {}; var y = {x: x}; x.y = y; x;';
+      Hive.eval(script, function(err, res) {
+        assert(err instanceof Error);
+        assert(/TypeError/.test(err.message));
+        assert(/circular/.test(err.message));
+        done();
+      });
+    });
+
   });
 
   describe('prepares each context with the Hivefile', function() {

@@ -68,24 +68,34 @@ class HiveWorker : public NanAsyncWorker {
 
     Context::Scope context_scope(Local<Context>::New(isolate, *context));
 
-    TryCatch tc;
+    TryCatch user_try_catch;
     Local<Script> s = Script::Compile(NanNew<String>(script.c_str()));
     Local<Value> v = s->Run();
 
     if (v.IsEmpty()) {
-      Local<Value> ex = tc.Exception();
+      Local<Value> ex = user_try_catch.Exception();
       String::Utf8Value ex_str(ex);
       SetErrorMessage(*ex_str);
+      NanUnlocker();
       return;
     }
 
     // Marshal the result of the script evaluation using JSON.stringify.
+    TryCatch marshal_try_catch;
     Local<Object> global = NanGetCurrentContext()->Global();
     Local<Object> JSON = global->Get(NanNew<String>("JSON"))->ToObject();
     Local<Value> stringify_ = JSON->Get(NanNew<String>("stringify"));
     Local<Function> stringify = Local<Function>::Cast(stringify_);
     Local<Value> args[] = { v };
     Local<Value> result = stringify->Call(JSON, 1, args);
+
+    if (result.IsEmpty()) {
+      Local<Value> ex = marshal_try_catch.Exception();
+      String::Utf8Value ex_str(ex);
+      SetErrorMessage(*ex_str);
+      NanUnlocker();
+      return;
+    }
 
     if (result->IsUndefined()) {
       // Per ECMAScript 5, JSON.stringify will return `undefined` given an
