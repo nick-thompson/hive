@@ -20,5 +20,5 @@ function measureCluster(samples, callback) {
 }
 
 measureCluster(+process.argv[2], function(err, time) {
-  console.log(time.toFixed(3) + 'ms');
+  console.log(time.toFixed(6));
 });

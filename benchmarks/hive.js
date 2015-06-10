@@ -22,6 +22,6 @@ function measureHive(samples, callback) {
 // concerns only the interactions we're interested in.
 measureHive(100, function() {
   measureHive(+process.argv[2], function(err, time) {
-    console.log(time.toFixed(3) + 'ms');
+    console.log(time.toFixed(6));
   });
 });

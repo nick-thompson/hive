@@ -6,7 +6,16 @@ var exec = require('child_process').exec;
 var samples = +process.argv[2];
 var runs = 10;
 
+function add(a, b) {
+  return a + b;
+}
+
+function sum(arr) {
+  return arr.reduce(add, 0);
+}
+
 function runCluster(callback) {
+  var results = [];
   exec('rm /tmp/hive.sock', function(err, stdout, stderr) {
     var server = spawn(
       'node',
@@ -19,29 +28,34 @@ function runCluster(callback) {
         exec(
           'node benchmarks/cluster.js ' + samples,
           function(err, stdout, stderr) {
-            console.log(stdout.replace(/\n/g, ''));
+            var res = +stdout.replace(/\n/g, '');
+            results.push(res);
+            console.log(res + 'ms');
             next();
           }
         );
       }, function(err) {
         server.kill();
-        callback();
+        callback(results);
       });
     }, 1000);
   });
 }
 
 function runHive(callback) {
+  var results = [];
   async.timesSeries(runs, function(n, next) {
     exec(
       'node benchmarks/hive.js ' + samples,
       function(err, stdout, stderr) {
-        console.log(stdout.replace(/\n/g, ''));
+        var res = +stdout.replace(/\n/g, '');
+        results.push(res);
+        console.log(res + 'ms');
         next();
       }
     );
   }, function(err) {
-    callback();
+    callback(results);
   });
 }
 
@@ -51,9 +65,13 @@ assert(
 );
 
 console.log('Cluster:');
-runCluster(function() {
+runCluster(function(clusterResults) {
   console.log('Hive:');
-  runHive(function() {
-    console.log('Done.');
+  runHive(function(hiveResults) {
+    console.log('Done:');
+    var clusterAverage = sum(clusterResults) / clusterResults.length;
+    var hiveAverage = sum(hiveResults) / hiveResults.length;
+    var pcnt = (clusterAverage - hiveAverage) / clusterAverage * 100;
+    console.log('Hive ran ' + pcnt.toFixed(2) + '% faster than the cluster.');
   });
 });
