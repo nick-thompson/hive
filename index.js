@@ -6,10 +6,10 @@ function init(script) {
 }
 
 function eval(expr, callback) {
-  return addon.eval(expr, function(err, res) {
+  return addon.eval(expr, function(err, res, latency) {
     if (err) return callback(err);
-    if (typeof res === 'undefined') return callback(null);
-    return callback(err, JSON.parse(res));
+    if (typeof res === 'undefined') return callback(null, undefined, latency);
+    return callback(err, JSON.parse(res), latency);
   });
 }
 

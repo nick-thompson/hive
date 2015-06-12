@@ -113,4 +113,18 @@ describe('Hive', function() {
 
   });
 
+  describe('includes latency measurements', function() {
+
+    it('should return a number', function(done) {
+      Hive.eval('1 + 1;', function(err, res, latency) {
+        assert.equal(null, err);
+        assert.equal(2, res);
+        assert.equal(typeof latency, 'number');
+        assert(latency > 0);
+        done();
+      });
+    });
+
+  });
+
 });

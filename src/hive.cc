@@ -35,11 +35,15 @@ static int get_threadpool_size() {
 class HiveWorker : public NanAsyncWorker {
  public:
   HiveWorker(NanCallback* callback, std::string script)
-    : NanAsyncWorker(callback), script(script), undef(false) {}
+    : NanAsyncWorker(callback), script(script), undef(false),
+      start(uv_hrtime()), latency(0.0) {}
   ~HiveWorker() {}
 
   // Executed inside the worker-thread.
   void Execute () {
+    uint64_t end = uv_hrtime();
+    latency = (static_cast<double>(end) - static_cast<double>(start)) / 1000000;
+
     Isolate* isolate = (Isolate *) uv_key_get(&isolate_cache_key);
     Persistent<Context>* context =
       (Persistent<Context> *) uv_key_get(&context_cache_key);
@@ -112,23 +116,30 @@ class HiveWorker : public NanAsyncWorker {
     NanScope();
 
     if (undef) {
-      Local<Value> argv[] = { NanNull(), NanUndefined() };
-      callback->Call(2, argv);
+      Local<Value> argv[] = {
+        NanNull(),
+        NanUndefined(),
+        NanNew<Number>(latency)
+      };
+      callback->Call(3, argv);
       return;
     }
 
     Local<Value> argv[] = {
       NanNull(),
-      NanNew<String>(res.c_str())
+      NanNew<String>(res.c_str()),
+      NanNew<Number>(latency)
     };
 
-    callback->Call(2, argv);
+    callback->Call(3, argv);
   }
 
  private:
   std::string script;
   std::string res;
   bool undef;
+  uint64_t start;
+  double latency;
 };
 
 NAN_METHOD(Initialize) {
