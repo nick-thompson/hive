@@ -1,6 +1,5 @@
 #include <nan.h>
 #include <vector>
-#include <fstream>
 #include "hive.h"
 
 using namespace v8;
@@ -13,11 +12,6 @@ static std::vector<Isolate*> isolates(4);
 static std::vector<Persistent<Context>*> contexts(4);
 
 static int idx = 0;
-
-static std::ifstream hive_file_("Hivefile.js");
-static std::string hive_file(
-    (std::istreambuf_iterator<char>(hive_file_)),
-    std::istreambuf_iterator<char>());
 
 // Estimates the size of the default libuv thread pool, based on
 // the UV_THREADPOOL_SIZE environment variable.
@@ -138,6 +132,9 @@ class HiveWorker : public NanAsyncWorker {
 };
 
 NAN_METHOD(Initialize) {
+  String::Utf8Value s(args[0]->ToString());
+  std::string init_script(*s);
+
   int size = get_threadpool_size();
   isolates.resize(size);
   contexts.resize(size);
@@ -150,9 +147,9 @@ NAN_METHOD(Initialize) {
 
     Local<Context> ctx = Context::New(isolate);
     Persistent<Context>* context = new Persistent<Context>(isolate, ctx);
-    if (!hive_file.empty()) {
+    if (!init_script.empty()) {
       Context::Scope context_scope(ctx);
-      Local<Script> s = Script::Compile(NanNew<String>(hive_file.c_str()));
+      Local<Script> s = Script::Compile(NanNew<String>(init_script.c_str()));
       (void) s->Run();
     }
     isolates[i] = isolate;

@@ -2,6 +2,8 @@ var Hive = require('..');
 
 var assert = require('assert');
 
+Hive.init();
+
 function measureHive(samples, callback) {
   var left = samples;
   var start = process.hrtime();

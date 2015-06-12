@@ -1,6 +1,9 @@
 var addon = require('bindings')('addon.node');
 
-addon.init();
+function init(script) {
+  script = script || "";
+  return addon.init(script);
+}
 
 function eval(expr, callback) {
   return addon.eval(expr, function(err, res) {
@@ -11,5 +14,6 @@ function eval(expr, callback) {
 }
 
 module.exports = {
-  eval: eval
+  eval: eval,
+  init: init
 };

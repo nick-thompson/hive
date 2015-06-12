@@ -1,6 +1,14 @@
 var assert = require('assert');
+var fs = require('fs');
 
 var Hive = require('..');
+
+var babel = fs.readFileSync(
+  'node_modules/babel-core/browser.min.js',
+  {encoding: 'utf-8'}
+);
+
+Hive.init(babel);
 
 describe('Hive', function() {
 
