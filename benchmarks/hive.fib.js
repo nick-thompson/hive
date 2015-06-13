@@ -47,7 +47,7 @@ measureHive(100, function(err, elapsed, latency) {
       var latency = result[1].toFixed(3);
       console.log(util.format('Hive, requesting %s tasks:', samples[i]));
       console.log(
-        util.format('%sms elapsed, %sms average latency', elapsed, latency)
+        util.format('  %sms elapsed, %sms average latency', elapsed, latency)
       );
     });
   });
