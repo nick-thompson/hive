@@ -4,9 +4,7 @@
   "description": "Threaded script evaluation in Node.js.",
   "main": "index.js",
   "dependencies": {
-    "async": "^1.0.0",
     "bindings": "~1.2.1",
-    "mocha": "^2.2.5",
     "nan": "^1.8.4"
   },
   "scripts": {
@@ -29,6 +27,8 @@
   "homepage": "https://github.com/nick-thompson/hive",
   "gypfile": true,
   "devDependencies": {
+    "async": "^1.0.0",
+    "mocha": "^2.2.5",
     "babel-core": "^5.5.5"
   }
 }
