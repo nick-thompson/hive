@@ -2,19 +2,32 @@ var Hive = require('..');
 
 var assert = require('assert');
 var async = require('async');
+var fs = require('fs');
 var util = require('util');
 var utils = require('./utils');
 
-Hive.init();
+var babel = fs.readFileSync(
+  'node_modules/babel-core/browser.min.js',
+  {encoding: 'utf-8'}
+);
+var sourceFile = fs.readFileSync(
+  'benchmarks/babel.util.js',
+  {encoding: 'utf-8'}
+);
+var script = util.format(
+  'babel.transform(%s).code;',
+  JSON.stringify(sourceFile)
+);
+
+Hive.init(babel);
 
 function measureHive(samples, callback) {
   var start = process.hrtime();
   var latencies = [];
 
   async.times(samples, function(n, next) {
-    Hive.eval('1 + 1;', function(err, res, latency) {
+    Hive.eval(script, function(err, res, latency) {
       latencies.push(latency);
-      assert.equal(2, res);
       next();
     });
   }, function(err) {

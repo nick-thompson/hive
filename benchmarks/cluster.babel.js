@@ -11,6 +11,10 @@ var sourceFile = fs.readFileSync(
   'benchmarks/babel.util.js',
   {encoding: 'utf-8'}
 );
+var script = util.format(
+  'babel.transform(%s).code;',
+  JSON.stringify(sourceFile)
+);
 
 function measureCluster(samples, callback) {
   var start = process.hrtime();
@@ -18,10 +22,6 @@ function measureCluster(samples, callback) {
 
   async.times(samples, function(n, next) {
     var socket = net.connect('/tmp/hive.sock');
-    var script = util.format(
-      'babel.transform(%s).code;',
-      JSON.stringify(sourceFile)
-    );
     var buffer = '';
     socket.on('data', function(data) {
       buffer += data.toString();
