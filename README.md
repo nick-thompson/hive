@@ -64,6 +64,20 @@ two are as you might expect, and **latency** will be the time, in milliseconds, 
 
 ## Motivation
 
+See the blog post linked in the introduction for a more thorough explanation of the motivation behind this
+project.
+
+JavaScript is an extremely popular language for implementing build tools for front end web projects. While this
+certainly makes sense, it imposes an unfortunate limitation on the performance of the CPU-bound work required in
+building such projects due to the single-threaded nature of JavaScript. Hive attempts to remedy this problem in
+Node.js' by leveraging the existing libuv thread pool to enable concurrent JavaScript execution, while avoiding
+the overhead of process-based parallelism common to Node.js developers via the builtin cluster module.
+
+Hive is obviously not the first project to attempt to introduce the benefits of multi-threading to JavaScript.
+In fact, a future version of Node.js will be expected to introduce Workers, similar to Web Workers, for concurrent
+JavaScript execution, which would make Hive largely obsolete. Until then, this project only serves to help
+demonstrate the value of such features in JavaScript.
+
 ## License
 
 Copyright (c) 2015 Nick Thompson
