@@ -1,10 +1,16 @@
 var net = require('net');
 var async = require('async');
 var assert = require('assert');
+var fs = require('fs');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var util = require('util');
 var utils = require('./utils');
+
+var sourceFile = fs.readFileSync(
+  'benchmarks/babel.util.js',
+  {encoding: 'utf-8'}
+);
 
 function measureCluster(samples, callback) {
   var start = process.hrtime();
@@ -12,17 +18,20 @@ function measureCluster(samples, callback) {
 
   async.times(samples, function(n, next) {
     var socket = net.connect('/tmp/hive.sock');
+    var script = util.format(
+      'babel.transform(%s).code;',
+      JSON.stringify(sourceFile)
+    );
     var buffer = '';
     socket.on('data', function(data) {
       buffer += data.toString();
     });
     socket.on('end', function() {
       var data = buffer.split('\0');
-      assert.equal('2', data[0]);
       latencies.push(+data[1]);
       next();
     });
-    socket.end('1 + 1;');
+    socket.end(script);
   }, function(err) {
     var diff = process.hrtime(start);
     var elapsed = (diff[0] * 1e9 + diff[1]) / 1000000;
@@ -58,5 +67,5 @@ exec('rm /tmp/hive.sock', function(err, stdout, stderr) {
         });
       }, 1000);
     });
-  }, 1000);
+  }, 3000);
 });

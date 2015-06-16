@@ -1,3 +1,4 @@
+var babel = require('babel-core');
 var cluster = require('cluster');
 var net = require('net');
 
