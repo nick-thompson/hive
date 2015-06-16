@@ -15,12 +15,16 @@ if (cluster.isMaster) {
     cluster.fork();
   }
 } else {
-  net.createServer(function(conn) {
+  net.createServer({allowHalfOpen: true}, function(conn) {
     var start = process.hrtime();
+    var buffer = '';
     conn.on('data', function(data) {
+      buffer += data.toString();
+    });
+    conn.on('end', function() {
       var diff = process.hrtime(start);
       var latency = (diff[0] * 1e9 + diff[1]) / 1000000;
-      var result = JSON.stringify(eval(data.toString()));
+      var result = JSON.stringify(eval(buffer.toString()));
       conn.end(result + '\0' + latency);
     });
   }).listen('/tmp/hive.sock');

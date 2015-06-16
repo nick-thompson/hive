@@ -12,13 +12,17 @@ function measureCluster(samples, callback) {
 
   async.times(samples, function(n, next) {
     var socket = net.connect('/tmp/hive.sock');
+    var buffer = '';
     socket.on('data', function(data) {
-      data = data.toString().split('\0');
+      buffer += data.toString();
+    });
+    socket.on('end', function() {
+      var data = buffer.split('\0');
       assert.equal('14930352', data[0]);
       latencies.push(+data[1]);
       next();
     });
-    socket.write('fib(35);');
+    socket.end('fib(35);');
   }, function(err) {
     var diff = process.hrtime(start);
     var elapsed = (diff[0] * 1e9 + diff[1]) / 1000000;
