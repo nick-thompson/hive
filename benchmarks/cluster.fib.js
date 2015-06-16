@@ -13,7 +13,7 @@ function measureCluster(samples, callback) {
   async.times(samples, function(n, next) {
     var socket = net.connect('/tmp/hive.sock');
     socket.on('data', function(data) {
-      data = data.toString().split(':');
+      data = data.toString().split('\0');
       assert.equal('14930352', data[0]);
       latencies.push(+data[1]);
       next();

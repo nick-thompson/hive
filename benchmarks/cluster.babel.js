@@ -13,7 +13,7 @@ function measureCluster(samples, callback) {
   async.times(samples, function(n, next) {
     var socket = net.connect('/tmp/hive.sock');
     socket.on('data', function(data) {
-      data = data.toString().split(':');
+      data = data.toString().split('\0');
       assert.equal('2', data[0]);
       latencies.push(+data[1]);
       next();
@@ -52,7 +52,7 @@ exec('rm /tmp/hive.sock', function(err, stdout, stderr) {
             util.format('  %sms elapsed, %sms average latency', elapsed, latency)
           );
         });
-      });
+      }, 1000);
     });
   }, 1000);
 });

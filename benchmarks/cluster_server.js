@@ -21,7 +21,7 @@ if (cluster.isMaster) {
       var diff = process.hrtime(start);
       var latency = (diff[0] * 1e9 + diff[1]) / 1000000;
       var result = JSON.stringify(eval(data.toString()));
-      conn.end(result + ':' + latency);
+      conn.end(result + '\0' + latency);
     });
   }).listen('/tmp/hive.sock');
 }
