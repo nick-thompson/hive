@@ -6,7 +6,7 @@ Hive is an experiment in leveraging Node.js' default thread pool for improving t
 of CPU-bound computations. Hive's main feature is an asynchronous variant of the builtin `eval` function, where
 the expression passed will be executed in a separate context on one of the worker threads behind Node.js' event loop.
 
-See the accompanying blog post [here]() for a more detailed introduction.
+See the accompanying blog post [here](http://nickwritesablog.com/the-state-of-concurrent-javascript/) for a more detailed introduction.
 
 **Note:** It turns out that this project is extremely similar to the more popular [Threads-A-Gogo](https://github.com/xk/node-threads-a-gogo). I haven't spent much time looking at this project,
 but it seems that the primary difference is that **hive** does not expose an interface for you to create and manage
